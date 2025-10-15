@@ -1,0 +1,56 @@
+services:
+  wordpress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - 'wordpress-files:/var/www/html'
+    environment:
+      - WORDPRESS_DB_HOST=$MYSQL_HOST
+      - WORDPRESS_DB_NAME=$MYSQL_DATABASE
+      - WORDPRESS_DB_USER=$MYSQL_USER
+      - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
+      - WORDPRESS_AUTH_KEY=$WP_AUTH_KEY
+      - WORDPRESS_SECURE_AUTH_KEY=$WP_SECURE_AUTH_KEY
+      - WORDPRESS_LOGGED_IN_KEY=$WP_LOGGED_IN_KEY
+      - WORDPRESS_NONCE_KEY=$WP_NONCE_KEY
+      - WORDPRESS_AUTH_SALT=$WP_AUTH_SALT
+      - WORDPRESS_SECURE_AUTH_SALT=$WP_SECURE_AUTH_SALT
+      - WORDPRESS_LOGGED_IN_SALT=$WP_LOGGED_IN_SALT
+      - WORDPRESS_NONCE_SALT=$WP_NONCE_SALT
+      - WORDPRESS_CONFIG_EXTRA=define('DISABLE_WP_CRON', true);define('WP_POST_REVISIONS', 10);define('WP_MEMORY_LIMIT', '512M');define('FS_METHOD','direct');define('DISALLOW_FILE_MODS',false);define('DISALLOW_FILE_EDIT',true);define('WP_AUTO_UPDATE_CORE',true);
+      - SMTP_HOST=$SMTP_HOST
+      - SMTP_PORT=$SMTP_PORT
+      - SMTP_AUTH=$SMTP_AUTH
+      - SMTP_USER=$SMTP_USER
+      - SMTP_PASS=$SMTP_PASS
+      - SMTP_FROM=$SMTP_FROM
+      - SMTP_FROMNAME=$SMTP_FROMNAME
+    depends_on:
+      - mariadb
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+  mariadb:
+    image: 'mariadb:11'
+    volumes:
+      - 'mariadb-data:/var/lib/mysql'
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_DATABASE=$MYSQL_DATABASE
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u${MYSQL_USER} -p${MYSQL_PASSWORD} || exit 1"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+volumes:
+  wordpress-files:
+    driver: local
+  mariadb-data:
+    driver: local
